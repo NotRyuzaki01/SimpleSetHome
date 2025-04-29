@@ -1,0 +1,12 @@
+name: SetHome
+version: '1.0-SNAPSHOT'
+main: me.not_ryuzaki.setHome.SetHome
+api-version: '1.21'
+commands:
+  sethome:
+    description: Sets home!
+    usage: /sethome
+
+  home:
+    description: Teleports home!
+    usage: /home
