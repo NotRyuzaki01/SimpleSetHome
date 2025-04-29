@@ -8,14 +8,18 @@ import java.util.UUID;
 
 public final class SetHome extends JavaPlugin {
     public static Map<UUID, double[]> homes = new HashMap<>();
+    private static SetHome instance;
 
     @Override
     public void onEnable() {
+        instance = this;
         load();
         getCommand("sethome").setExecutor(new SetHomeCommand());
         getCommand("home").setExecutor(new HomeCommand());
         getServer().getPluginManager().registerEvents(new HomeGUIListener(), this); // register the listener ONCE
     }
+
+
 
     public void save(){
         for (UUID uuid : homes.keySet()) {
@@ -37,5 +41,9 @@ public final class SetHome extends JavaPlugin {
                 homes.put(uuid, new double[]{x, y, z});
             }
         }
+    }
+
+    public static SetHome getInstance() {
+        return instance;
     }
 }
