@@ -16,14 +16,18 @@ public class SetHomeCommand implements CommandExecutor {
             sender.sendMessage("This command can only be used by players!");
             return false;
         }
+        if (SetHome.getInstance().getConfig().contains("homes." + player.getUniqueId())) {
+            player.sendMessage(ChatColor.RED + "This home is already set!");
+            return true;
+        }
         double x = player.getLocation().getX();
         double y = player.getLocation().getY();
         double z = player.getLocation().getZ();
         UUID uuid = player.getUniqueId();
         SetHome.homes.put(uuid, new double[]{x, y, z});
         player.sendMessage(ChatColor.GOLD + "Set home coordinates: " + x + ", " + y + ", " + z);
-        JavaPlugin plugin = JavaPlugin.getPlugin(SetHome.class);
-        ((SetHome) plugin).save();
+        SetHome plugin = JavaPlugin.getPlugin(SetHome.class);
+        plugin.save();
 
         return true;
     }

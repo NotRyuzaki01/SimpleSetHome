@@ -12,7 +12,7 @@ public class HomeGUI {
     public static void openHomeGUI(Player player) {
         Inventory gui = Bukkit.createInventory(null, 36, "Your Home");
 
-        boolean hasHome = SetHome.homes.containsKey(player.getUniqueId()); // ✅ CHECK FROM MEMORY, NOT CONFIG
+        boolean hasHome = SetHome.homes.containsKey(player.getUniqueId());
 
         Material bedMaterial = hasHome ? Material.BLUE_BED : Material.RED_BED;
         Material dyeMaterial = hasHome ? Material.BLUE_DYE : Material.GRAY_DYE;
@@ -24,10 +24,10 @@ public class HomeGUI {
         ItemMeta metaDye = dye.getItemMeta();
 
         if (hasHome) {
-            meta.setDisplayName("§6Go Home");
-            metaDye.setDisplayName("§6Delete Home");
+            meta.setDisplayName("§x§0§0§9§4§F§FGo Home");
+            metaDye.setDisplayName("§cDelete Home");
         } else {
-            meta.setDisplayName("§6Right Click To Set Home");
+            meta.setDisplayName("§fClick To Set Home");
             metaDye.setDisplayName("§7No Home To Delete");
         }
 

@@ -19,8 +19,6 @@ public final class SetHome extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new HomeGUIListener(), this); // register the listener ONCE
     }
 
-
-
     public void save(){
         for (UUID uuid : homes.keySet()) {
             double[] coords = homes.get(uuid);
