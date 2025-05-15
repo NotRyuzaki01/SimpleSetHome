@@ -3,9 +3,7 @@ package me.not_ryuzaki.setHome;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -61,13 +59,26 @@ public class HomeGUIListener implements Listener {
 
             // --- TELEPORT HOME ---
             else if (meta.getDisplayName().equals("§x§0§0§9§4§F§FGo Home")) {
-                double[] coords = SetHome.homes.get(player.getUniqueId());
-                if (coords == null) {
+                Object[] data = SetHome.homes.get(player.getUniqueId());
+                if (data == null) {
                     player.sendMessage("§cYou don't have a home set!");
                     player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
                     player.closeInventory();
                     return;
                 }
+
+                double x = (double) data[0];
+                double y = (double) data[1];
+                double z = (double) data[2];
+                String worldName = (String) data[3];
+
+                World world = Bukkit.getWorld(worldName);
+                if (world == null) {
+                    player.sendMessage("§cYour home world is missing!");
+                    return;
+                }
+
+                Location homeLoc = new Location(world, x, y, z);
 
                 new BukkitRunnable() {
                     int countdown = 5;
@@ -100,7 +111,7 @@ public class HomeGUIListener implements Listener {
                             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
                             countdown--;
                         } else {
-                            player.teleport(new Location(player.getWorld(), coords[0], coords[1], coords[2]));
+                            player.teleport(homeLoc);
                             player.sendMessage("§aTeleported to your home!");
                             player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1f);
                             cancel();
@@ -115,11 +126,13 @@ public class HomeGUIListener implements Listener {
             else if (meta.getDisplayName().equals("§fClick To Set Home")) {
                 Location loc = player.getLocation();
                 double x = loc.getX(), y = loc.getY(), z = loc.getZ();
+                String worldName = loc.getWorld().getName();
 
-                SetHome.homes.put(player.getUniqueId(), new double[]{x, y, z});
+                SetHome.homes.put(player.getUniqueId(), new Object[]{x, y, z, worldName});
                 SetHome.getInstance().getConfig().set("homes." + player.getUniqueId() + ".x", x);
                 SetHome.getInstance().getConfig().set("homes." + player.getUniqueId() + ".y", y);
                 SetHome.getInstance().getConfig().set("homes." + player.getUniqueId() + ".z", z);
+                SetHome.getInstance().getConfig().set("homes." + player.getUniqueId() + ".world", worldName);
                 SetHome.getInstance().saveConfig();
 
                 player.sendMessage("§aHome has been set at your current location!");
@@ -148,6 +161,7 @@ public class HomeGUIListener implements Listener {
             } else if (clicked.getType() == Material.RED_STAINED_GLASS_PANE && displayName.equals("§cCancel")) {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1f, 1f);
                 player.closeInventory();
+                HomeGUI.openHomeGUI(player);
             }
         }
     }

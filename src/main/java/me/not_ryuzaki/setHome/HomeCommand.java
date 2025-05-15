@@ -13,7 +13,7 @@ public class HomeCommand implements CommandExecutor {
             return false;
         }
 
-        HomeGUI.openHomeGUI(player); // JUST open the GUI
+        HomeGUI.openHomeGUI(player);
         return true;
     }
 }

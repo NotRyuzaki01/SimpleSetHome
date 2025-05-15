@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class SetHome extends JavaPlugin {
-    public static Map<UUID, double[]> homes = new HashMap<>();
+    public static Map<UUID, Object[]> homes = new HashMap<>();
     private static SetHome instance;
 
     @Override
@@ -21,10 +21,11 @@ public final class SetHome extends JavaPlugin {
 
     public void save(){
         for (UUID uuid : homes.keySet()) {
-            double[] coords = homes.get(uuid);
-            getConfig().set("homes." + uuid + ".x", coords[0]);
-            getConfig().set("homes." + uuid + ".y", coords[1]);
-            getConfig().set("homes." + uuid + ".z", coords[2]);
+            Object[] data = homes.get(uuid);
+            getConfig().set("homes." + uuid + ".x", data[0]);
+            getConfig().set("homes." + uuid + ".y", data[1]);
+            getConfig().set("homes." + uuid + ".z", data[2]);
+            getConfig().set("homes." + uuid + ".world", data[3]);
         }
         saveConfig();
     }
@@ -36,7 +37,8 @@ public final class SetHome extends JavaPlugin {
                 double x = getConfig().getDouble("homes." + key + ".x");
                 double y = getConfig().getDouble("homes." + key + ".y");
                 double z = getConfig().getDouble("homes." + key + ".z");
-                homes.put(uuid, new double[]{x, y, z});
+                String world = getConfig().getString("homes." + key + ".world");
+                homes.put(uuid, new Object[]{x, y, z, world});
             }
         }
     }
