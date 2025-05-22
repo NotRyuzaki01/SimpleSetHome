@@ -1,14 +1,18 @@
 package me.not_ryuzaki.setHome;
 
+import me.not_ryuzaki.mainScorePlugin.Combat;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.ChatColor;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class SetHomeCommand implements CommandExecutor {
@@ -20,10 +24,37 @@ public class SetHomeCommand implements CommandExecutor {
             return false;
         }
 
+        if (Combat.isInCombat(player)) {
+            player.sendMessage("§cYou can't set a home while in combat!");
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§cYou're in combat!"));
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            return true;
+        }
+
         UUID uuid = player.getUniqueId();
-        if (SetHome.homes.containsKey(uuid)) {
-            player.sendMessage(ChatColor.RED + "Home is already set!");
-            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§cHome is already set!"));
+        Map<String, Object[]> playerHomes = SetHome.homes.computeIfAbsent(uuid, k -> new HashMap<>());
+
+        String homeName;
+        if (args.length > 0) {
+            if (args[0].equals("1") || args[0].equals("2")) {
+                homeName = "home" + args[0];
+            } else {
+                player.sendMessage(ChatColor.RED + "Usage: /sethome [1|2]");
+                return true;
+            }
+        } else {
+            homeName = playerHomes.containsKey("home1") ? "home2" : "home1";
+        }
+
+        if (playerHomes.containsKey(homeName)) {
+            String homeNumber = homeName.substring(4);
+            player.sendMessage(ChatColor.RED + "Home " + homeNumber + " is already set!");
+
+            TextComponent message = new TextComponent("Home " + homeNumber + " is already set!");
+            message.setColor(ChatColor.RED);
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, message);
+
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             return true;
         }
 
@@ -32,18 +63,25 @@ public class SetHomeCommand implements CommandExecutor {
         double z = player.getLocation().getZ();
         String worldName = player.getWorld().getName();
 
-        // Save to memory
-        SetHome.homes.put(uuid, new Object[]{x, y, z, worldName});
+        playerHomes.put(homeName, new Object[]{x, y, z, worldName});
 
-        // Save to config
         SetHome plugin = JavaPlugin.getPlugin(SetHome.class);
-        plugin.getConfig().set("homes." + uuid + ".x", x);
-        plugin.getConfig().set("homes." + uuid + ".y", y);
-        plugin.getConfig().set("homes." + uuid + ".z", z);
-        plugin.getConfig().set("homes." + uuid + ".world", worldName);
+        plugin.getConfig().set("homes." + uuid + "." + homeName + ".x", x);
+        plugin.getConfig().set("homes." + uuid + "." + homeName + ".y", y);
+        plugin.getConfig().set("homes." + uuid + "." + homeName + ".z", z);
+        plugin.getConfig().set("homes." + uuid + "." + homeName + ".world", worldName);
         plugin.saveConfig();
 
-        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§7Home set"));
+        String homeNumber = homeName.substring(4);
+        TextComponent homePart = new TextComponent("Home " + homeNumber);
+        homePart.setColor(ChatColor.of("#0094FF"));
+
+        TextComponent setPart = new TextComponent(" set");
+        setPart.setColor(ChatColor.WHITE);
+
+        homePart.addExtra(setPart);
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, homePart);
+        player.sendMessage("§x§0§0§9§4§F§FHome " + homeNumber + " §fset");
 
         return true;
     }

@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class SetHome extends JavaPlugin {
-    public static Map<UUID, Object[]> homes = new HashMap<>();
+    public static Map<UUID, Map<String, Object[]>> homes = new HashMap<>(); // Changed to store multiple homes per player
     private static SetHome instance;
 
     @Override
@@ -16,29 +16,38 @@ public final class SetHome extends JavaPlugin {
         load();
         getCommand("sethome").setExecutor(new SetHomeCommand());
         getCommand("home").setExecutor(new HomeCommand());
-        getServer().getPluginManager().registerEvents(new HomeGUIListener(), this); // register the listener ONCE
+        getServer().getPluginManager().registerEvents(new HomeGUIListener(), this);
     }
 
-    public void save(){
+    public void save() {
         for (UUID uuid : homes.keySet()) {
-            Object[] data = homes.get(uuid);
-            getConfig().set("homes." + uuid + ".x", data[0]);
-            getConfig().set("homes." + uuid + ".y", data[1]);
-            getConfig().set("homes." + uuid + ".z", data[2]);
-            getConfig().set("homes." + uuid + ".world", data[3]);
+            Map<String, Object[]> playerHomes = homes.get(uuid);
+            for (String homeName : playerHomes.keySet()) {
+                Object[] data = playerHomes.get(homeName);
+                getConfig().set("homes." + uuid + "." + homeName + ".x", data[0]);
+                getConfig().set("homes." + uuid + "." + homeName + ".y", data[1]);
+                getConfig().set("homes." + uuid + "." + homeName + ".z", data[2]);
+                getConfig().set("homes." + uuid + "." + homeName + ".world", data[3]);
+            }
         }
         saveConfig();
     }
 
-    public void load(){
+    public void load() {
         if (getConfig().isConfigurationSection("homes")) {
-            for (String key : getConfig().getConfigurationSection("homes").getKeys(false)) {
-                UUID uuid = UUID.fromString(key);
-                double x = getConfig().getDouble("homes." + key + ".x");
-                double y = getConfig().getDouble("homes." + key + ".y");
-                double z = getConfig().getDouble("homes." + key + ".z");
-                String world = getConfig().getString("homes." + key + ".world");
-                homes.put(uuid, new Object[]{x, y, z, world});
+            for (String uuidStr : getConfig().getConfigurationSection("homes").getKeys(false)) {
+                UUID uuid = UUID.fromString(uuidStr);
+                Map<String, Object[]> playerHomes = new HashMap<>();
+
+                for (String homeName : getConfig().getConfigurationSection("homes." + uuidStr).getKeys(false)) {
+                    double x = getConfig().getDouble("homes." + uuidStr + "." + homeName + ".x");
+                    double y = getConfig().getDouble("homes." + uuidStr + "." + homeName + ".y");
+                    double z = getConfig().getDouble("homes." + uuidStr + "." + homeName + ".z");
+                    String world = getConfig().getString("homes." + uuidStr + "." + homeName + ".world");
+                    playerHomes.put(homeName, new Object[]{x, y, z, world});
+                }
+
+                homes.put(uuid, playerHomes);
             }
         }
     }
