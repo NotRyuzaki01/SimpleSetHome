@@ -83,6 +83,14 @@ public class HomeGUIListener implements Listener {
     }
 
     private void teleportToHome(Player player, Location playerLoc, String homeName) {
+        if (me.not_ryuzaki.mainScorePlugin.Combat.isInCombat(player)) {
+            player.sendMessage("§cYou can't teleport while in combat!");
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§cYou're in combat!"));
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            player.closeInventory();
+            return;
+        }
+
         Map<String, Object[]> playerHomes = SetHome.homes.get(player.getUniqueId());
         if (playerHomes == null || !playerHomes.containsKey(homeName)) {
             player.sendMessage("§cYou don't have a " + homeName + " set!");
@@ -104,17 +112,33 @@ public class HomeGUIListener implements Listener {
         }
 
         Location homeLoc = new Location(world, x, y, z);
+        player.closeInventory();
 
-        new BukkitRunnable() {
+        BukkitRunnable task = new BukkitRunnable() {
             int countdown = 5;
             final Location originalLoc = playerLoc;
 
             @Override
             public void run() {
+                if (!player.isOnline()) {
+                    cancel();
+                    return;
+                }
+
+                if (me.not_ryuzaki.mainScorePlugin.Combat.isInCombat(player)) {
+                    player.sendMessage("§cTeleport cancelled — you entered combat!");
+                    player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§cTeleport cancelled — in combat!"));
+                    player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                    me.not_ryuzaki.mainScorePlugin.Combat.unregisterTeleportCallback(player.getUniqueId());
+                    cancel();
+                    return;
+                }
+
                 if (hasMoved(originalLoc, player.getLocation())) {
                     player.sendMessage("§cTeleport cancelled because you moved!");
                     player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§cTeleport cancelled because you moved!"));
                     player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                    me.not_ryuzaki.mainScorePlugin.Combat.unregisterTeleportCallback(player.getUniqueId());
                     cancel();
                     return;
                 }
@@ -122,10 +146,8 @@ public class HomeGUIListener implements Listener {
                 if (countdown > 0) {
                     TextComponent message = new TextComponent("Teleporting in ");
                     message.setColor(ChatColor.WHITE);
-
                     TextComponent seconds = new TextComponent(String.valueOf(countdown));
                     seconds.setColor(ChatColor.of("#0094FF"));
-
                     TextComponent suffix = new TextComponent("s");
                     suffix.setColor(ChatColor.of("#0094FF"));
 
@@ -140,13 +162,22 @@ public class HomeGUIListener implements Listener {
                     player.sendMessage("§aTeleported to your home!");
                     player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§aTeleported to your home!"));
                     player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1f);
+                    me.not_ryuzaki.mainScorePlugin.Combat.unregisterTeleportCallback(player.getUniqueId());
                     cancel();
                 }
             }
-        }.runTaskTimer(SetHome.getInstance(), 0L, 20L);
+        };
 
-        player.closeInventory();
+        task.runTaskTimer(SetHome.getInstance(), 0L, 20L);
+
+        me.not_ryuzaki.mainScorePlugin.Combat.registerTeleportCancelCallback(player.getUniqueId(), () -> {
+            task.cancel();
+            player.sendMessage("§cTeleport cancelled — you entered combat!");
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§cTeleport cancelled — in combat!"));
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+        });
     }
+
 
     private void setHome(Player player, String homeName) {
         Location loc = player.getLocation();
