@@ -1,13 +1,12 @@
 package me.not_ryuzaki.setHome;
 
 import org.bukkit.plugin.java.JavaPlugin;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public final class SetHome extends JavaPlugin {
-    public static Map<UUID, Map<String, Object[]>> homes = new HashMap<>(); // Changed to store multiple homes per player
+    public static Map<UUID, Map<String, Object[]>> homes = new HashMap<>();
     private static SetHome instance;
 
     @Override
@@ -38,7 +37,6 @@ public final class SetHome extends JavaPlugin {
             for (String uuidStr : getConfig().getConfigurationSection("homes").getKeys(false)) {
                 UUID uuid = UUID.fromString(uuidStr);
                 Map<String, Object[]> playerHomes = new HashMap<>();
-
                 for (String homeName : getConfig().getConfigurationSection("homes." + uuidStr).getKeys(false)) {
                     double x = getConfig().getDouble("homes." + uuidStr + "." + homeName + ".x");
                     double y = getConfig().getDouble("homes." + uuidStr + "." + homeName + ".y");
@@ -46,10 +44,15 @@ public final class SetHome extends JavaPlugin {
                     String world = getConfig().getString("homes." + uuidStr + "." + homeName + ".world");
                     playerHomes.put(homeName, new Object[]{x, y, z, world});
                 }
-
                 homes.put(uuid, playerHomes);
             }
         }
+    }
+
+    public static int getMaxHomes(org.bukkit.entity.Player player) {
+        if (player.hasPermission("sethome.slots.5")) return 5;
+        if (player.hasPermission("sethome.slots.4")) return 4;
+        return 2;
     }
 
     public static SetHome getInstance() {

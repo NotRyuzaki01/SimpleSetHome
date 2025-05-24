@@ -10,3 +10,11 @@ commands:
   home:
     description: Teleports home!
     usage: /home
+
+permissions:
+  sethome.slots.2:
+    default: true
+  sethome.slots.4:
+    default: false
+  sethome.slots.5:
+    default: false

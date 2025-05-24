@@ -30,7 +30,6 @@ public class HomeGUIListener implements Listener {
 
         if (title.equals("Your Homes")) {
             event.setCancelled(true);
-
             if (Combat.isInCombat(player)) {
                 player.sendMessage("§cYou can't teleport while in combat!");
                 player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§cYou're in combat!"));
@@ -41,26 +40,29 @@ public class HomeGUIListener implements Listener {
 
             Location playerLoc = player.getLocation().clone();
             Map<String, Object[]> playerHomes = SetHome.homes.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>());
+            int maxHomes = SetHome.getMaxHomes(player);
 
-            if (clicked.getType() == Material.BLUE_BED && meta.getDisplayName().equals("§x§0§0§9§4§F§FHome 1")) {
-                teleportToHome(player, playerLoc, "home1");
-            } else if (clicked.getType() == Material.GRAY_BED && meta.getDisplayName().equals("§fClick To Set Home 1")) {
-                setHome(player, "home1");
-            } else if (clicked.getType() == Material.BLUE_BED && meta.getDisplayName().equals("§x§0§0§9§4§F§FHome 2")) {
-                teleportToHome(player, playerLoc, "home2");
-            } else if (clicked.getType() == Material.GRAY_BED && meta.getDisplayName().equals("§fClick To Set Home 2")) {
-                setHome(player, "home2");
-            } else if (clicked.getType() == Material.BLUE_DYE && meta.getDisplayName().equals("§cDelete Home 1")) {
-                openDeleteConfirmationGUI(player, "home1");
-            } else if (clicked.getType() == Material.BLUE_DYE && meta.getDisplayName().equals("§cDelete Home 2")) {
-                openDeleteConfirmationGUI(player, "home2");
+            for (int i = 1; i <= 5; i++) {
+                String homeKey = "home" + i;
+
+                if (meta.getDisplayName().equals("§x§0§0§9§4§F§FHome " + i) && clicked.getType() == Material.BLUE_BED) {
+                    if (i <= maxHomes) teleportToHome(player, playerLoc, homeKey);
+                    return;
+                }
+                if (meta.getDisplayName().equals("§fClick To Set Home " + i) && clicked.getType() == Material.GRAY_BED) {
+                    if (i <= maxHomes) setHome(player, homeKey);
+                    return;
+                }
+                if (meta.getDisplayName().equals("§cDelete Home " + i) && clicked.getType() == Material.BLUE_DYE) {
+                    if (i <= maxHomes) openDeleteConfirmationGUI(player, homeKey);
+                    return;
+                }
             }
         } else if (title.startsWith("Delete Home ")) {
             event.setCancelled(true);
-
             if (!meta.hasDisplayName()) return;
-            String displayName = meta.getDisplayName();
 
+            String displayName = meta.getDisplayName();
             String homeNumber = title.substring("Delete Home ".length());
             String homeName = "home" + homeNumber;
 
@@ -68,11 +70,9 @@ public class HomeGUIListener implements Listener {
                 SetHome.homes.get(player.getUniqueId()).remove(homeName);
                 SetHome.getInstance().getConfig().set("homes." + player.getUniqueId() + "." + homeName, null);
                 SetHome.getInstance().saveConfig();
-
                 player.sendMessage("§cYour Home " + homeNumber + " has been deleted!");
                 player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§cYour Home " + homeNumber + " has been deleted!"));
                 player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_BREAK, 1f, 1f);
-
                 HomeGUI.openHomeGUI(player);
             } else if (clicked.getType() == Material.RED_STAINED_GLASS_PANE && displayName.equals("§cCancel")) {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1f, 1f);
@@ -83,7 +83,7 @@ public class HomeGUIListener implements Listener {
     }
 
     private void teleportToHome(Player player, Location playerLoc, String homeName) {
-        if (me.not_ryuzaki.mainScorePlugin.Combat.isInCombat(player)) {
+        if (Combat.isInCombat(player)) {
             player.sendMessage("§cYou can't teleport while in combat!");
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§cYou're in combat!"));
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
@@ -125,11 +125,11 @@ public class HomeGUIListener implements Listener {
                     return;
                 }
 
-                if (me.not_ryuzaki.mainScorePlugin.Combat.isInCombat(player)) {
+                if (Combat.isInCombat(player)) {
                     player.sendMessage("§cTeleport cancelled — you entered combat!");
                     player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§cTeleport cancelled — in combat!"));
                     player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
-                    me.not_ryuzaki.mainScorePlugin.Combat.unregisterTeleportCallback(player.getUniqueId());
+                    Combat.unregisterTeleportCallback(player.getUniqueId());
                     cancel();
                     return;
                 }
@@ -138,7 +138,7 @@ public class HomeGUIListener implements Listener {
                     player.sendMessage("§cTeleport cancelled because you moved!");
                     player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§cTeleport cancelled because you moved!"));
                     player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
-                    me.not_ryuzaki.mainScorePlugin.Combat.unregisterTeleportCallback(player.getUniqueId());
+                    Combat.unregisterTeleportCallback(player.getUniqueId());
                     cancel();
                     return;
                 }
@@ -150,10 +150,8 @@ public class HomeGUIListener implements Listener {
                     seconds.setColor(ChatColor.of("#0094FF"));
                     TextComponent suffix = new TextComponent("s");
                     suffix.setColor(ChatColor.of("#0094FF"));
-
                     message.addExtra(seconds);
                     message.addExtra(suffix);
-
                     player.spigot().sendMessage(ChatMessageType.ACTION_BAR, message);
                     player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1f, 1f);
                     countdown--;
@@ -162,22 +160,20 @@ public class HomeGUIListener implements Listener {
                     player.sendMessage("§aTeleported to your home!");
                     player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§aTeleported to your home!"));
                     player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1f);
-                    me.not_ryuzaki.mainScorePlugin.Combat.unregisterTeleportCallback(player.getUniqueId());
+                    Combat.unregisterTeleportCallback(player.getUniqueId());
                     cancel();
                 }
             }
         };
 
         task.runTaskTimer(SetHome.getInstance(), 0L, 20L);
-
-        me.not_ryuzaki.mainScorePlugin.Combat.registerTeleportCancelCallback(player.getUniqueId(), () -> {
+        Combat.registerTeleportCancelCallback(player.getUniqueId(), () -> {
             task.cancel();
             player.sendMessage("§cTeleport cancelled — you entered combat!");
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§cTeleport cancelled — in combat!"));
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
         });
     }
-
 
     private void setHome(Player player, String homeName) {
         Location loc = player.getLocation();
@@ -186,26 +182,22 @@ public class HomeGUIListener implements Listener {
 
         Map<String, Object[]> playerHomes = SetHome.homes.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>());
         playerHomes.put(homeName, new Object[]{x, y, z, worldName});
-
-        SetHome.getInstance().getConfig().set("homes." + player.getUniqueId() + "." + homeName + ".x", x);
-        SetHome.getInstance().getConfig().set("homes." + player.getUniqueId() + "." + homeName + ".y", y);
-        SetHome.getInstance().getConfig().set("homes." + player.getUniqueId() + "." + homeName + ".z", z);
-        SetHome.getInstance().getConfig().set("homes." + player.getUniqueId() + "." + homeName + ".world", worldName);
-        SetHome.getInstance().saveConfig();
+        SetHome plugin = SetHome.getInstance();
+        plugin.getConfig().set("homes." + player.getUniqueId() + "." + homeName + ".x", x);
+        plugin.getConfig().set("homes." + player.getUniqueId() + "." + homeName + ".y", y);
+        plugin.getConfig().set("homes." + player.getUniqueId() + "." + homeName + ".z", z);
+        plugin.getConfig().set("homes." + player.getUniqueId() + "." + homeName + ".world", worldName);
+        plugin.saveConfig();
 
         player.sendMessage("§x§0§0§9§4§F§FHome " + homeName.charAt(4) + "§f set");
         String homeNumber = homeName.substring(4);
-
         TextComponent homePart = new TextComponent("Home " + homeNumber);
         homePart.setColor(ChatColor.of("#0094FF"));
-
         TextComponent setPart = new TextComponent(" set");
         setPart.setColor(ChatColor.WHITE);
-
         homePart.addExtra(setPart);
         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, homePart);
         player.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 1f, 1f);
-
         HomeGUI.openHomeGUI(player);
     }
 
